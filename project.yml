@@ -18,6 +18,7 @@ targets:
         CFBundleDisplayName: JumpStart
         NSCameraUsageDescription: "JumpStart uses your camera locally to recognize jumping jacks. Video is never saved or uploaded."
         NSAlarmKitUsageDescription: "JumpStart schedules wake-up alarms that you configure."
+        UIBackgroundModes: [audio]
     sources:
       - path: JumpStart
     settings:

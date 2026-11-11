@@ -28,6 +28,14 @@ struct OpenChallengeIntent: LiveActivityIntent {
 
     func perform() async throws -> some IntentResult {
         UserDefaults.standard.set(true, forKey: "openChallenge")
+        let goal: Int
+        if let data = UserDefaults.standard.data(forKey: "alarmSettings"),
+           let settings = try? JSONDecoder().decode(AlarmSettings.self, from: data) {
+            goal = settings.repetitions
+        } else {
+            goal = 20
+        }
+        _ = ChallengePersistence.begin(goal: goal)
         return .result()
     }
 }
@@ -93,7 +101,7 @@ final class AlarmStore: ObservableObject {
                 let configuration = AlarmManager.AlarmConfiguration<JumpStartMetadata>.alarm(
                     schedule: schedule,
                     attributes: attributes,
-                    stopIntent: nil,
+                    stopIntent: OpenChallengeIntent(),
                     secondaryIntent: OpenChallengeIntent(),
                     sound: .default
                 )

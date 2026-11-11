@@ -2,7 +2,9 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var store: AlarmStore
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showingChallenge = false
+    @State private var challengeTarget = 20
     @State private var showInformation = false
 
     private let mint = Color(red: 0.57, green: 0.94, blue: 0.66)
@@ -75,7 +77,7 @@ struct HomeView: View {
                             get: { Double(store.settings.volume) },
                             set: { store.settings.volume = Int($0.rounded()) }
                         ), in: 0...100, step: 5).tint(mint)
-                        Text("AlarmKit's system alarm volume is managed by iOS. This setting applies only to future in-app sounds.")
+                        Text("Controls the challenge siren; AlarmKit's initial system alarm volume is managed by iOS.")
                             .font(.caption).foregroundStyle(.secondary)
                         Divider().overlay(.white.opacity(0.08))
                         Picker("Preferred sound", selection: $store.settings.sound) {
@@ -83,7 +85,7 @@ struct HomeView: View {
                                 Text(sound.rawValue).tag(sound)
                             }
                         }
-                        Text("System alarms currently use the iOS default sound; sound options are reserved for a later custom-audio build.")
+                        Text("Selects the challenge siren. The initial system alarm uses the iOS default sound.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     .padding(22).background(.white.opacity(0.075), in: RoundedRectangle(cornerRadius: 25))
@@ -93,7 +95,10 @@ struct HomeView: View {
                             .font(.headline).foregroundStyle(mint)
                         Text("Prop up your phone, step into frame, and complete \(store.settings.repetitions) jumping jacks. Counting happens entirely on your iPhone.")
                             .foregroundStyle(.secondary)
-                        Button { showingChallenge = true } label: {
+                        Button {
+                            challengeTarget = ChallengePersistence.pending?.goal ?? store.settings.repetitions
+                            showingChallenge = true
+                        } label: {
                             HStack { Spacer(); Image(systemName: "play.fill"); Text("Try the challenge"); Spacer() }
                                 .font(.headline).padding(15)
                         }
@@ -108,7 +113,7 @@ struct HomeView: View {
             }
             .background(Color(red: 0.06, green: 0.085, blue: 0.10))
             .toolbar(.hidden, for: .navigationBar)
-            .fullScreenCover(isPresented: $showingChallenge) { ChallengeView(target: store.settings.repetitions) }
+            .fullScreenCover(isPresented: $showingChallenge) { ChallengeView(target: challengeTarget) }
             .alert("Unable to schedule alarm", isPresented: Binding(
                 get: { store.errorMessage != nil },
                 set: { if !$0 { store.errorMessage = nil } }
@@ -116,14 +121,21 @@ struct HomeView: View {
             .alert("About JumpStart", isPresented: $showInformation) {
                 Button("Understood", role: .cancel) {}
             } message: {
-                Text("iOS provides a system Stop button, which cannot be removed. Opening the camera challenge does not automatically silence an active system alarm. Never rely on a sideloaded app as your only wake-up alarm; free signing expires after 7 days.")
+                Text("iOS provides a system Stop button, which cannot be removed. The challenge siren can play with the phone locked or another app open, but force-quitting the app can stop it. Never rely on a sideloaded app as your only wake-up alarm; free signing expires after 7 days.")
             }
-            .task {
-                if UserDefaults.standard.bool(forKey: "openChallenge") {
-                    UserDefaults.standard.set(false, forKey: "openChallenge")
-                    showingChallenge = true
-                }
+            .task { reopenPendingChallenge() }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { reopenPendingChallenge() }
             }
         }
+    }
+
+    private func reopenPendingChallenge() {
+        let openedFromAlarm = UserDefaults.standard.bool(forKey: "openChallenge")
+        let pending = ChallengePersistence.pending
+        guard openedFromAlarm || pending != nil else { return }
+        UserDefaults.standard.set(false, forKey: "openChallenge")
+        challengeTarget = pending?.goal ?? store.settings.repetitions
+        showingChallenge = true
     }
 }

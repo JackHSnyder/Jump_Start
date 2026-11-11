@@ -40,6 +40,10 @@ struct JumpingJackCounter {
     }
 
     mutating func reset() { self = JumpingJackCounter() }
+    mutating func restore(_ completed: Int) {
+        self = JumpingJackCounter()
+        count = max(0, completed)
+    }
 }
 
 @MainActor
@@ -91,6 +95,11 @@ final class PoseCamera: NSObject, ObservableObject {
 
     func stop() { queue.async { [weak self] in self?.session.stopRunning() } }
     func reset() { counter.reset(); count = 0; tracking = false }
+    func restore(_ completed: Int) {
+        counter.restore(completed)
+        count = max(0, completed)
+        tracking = false
+    }
 
     private func publish(_ observation: VNHumanBodyPoseObservation?) {
         let now = Date()

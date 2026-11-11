@@ -68,7 +68,11 @@ final class AlarmStore: ObservableObject {
 
                 let alert = AlarmPresentation.Alert(
                     title: "Time to move!",
-                    secondaryButton: .openAppButton,
+                    secondaryButton: AlarmButton(
+                        text: "Open",
+                        textColor: .white,
+                        systemImageName: "arrow.right.circle.fill"
+                    ),
                     secondaryButtonBehavior: .custom
                 )
                 let attributes = AlarmAttributes<JumpStartMetadata>(
@@ -77,8 +81,11 @@ final class AlarmStore: ObservableObject {
                     tintColor: Color(red: 0.57, green: 0.94, blue: 0.66)
                 )
                 let time = Alarm.Schedule.Relative.Time(hour: settings.hour, minute: settings.minute)
-                let schedule = Alarm.Schedule.relative(.init(time: time, repeats: .daily))
-                let configuration = AlarmManager.AlarmConfiguration.alarm(
+                let schedule = Alarm.Schedule.relative(.init(
+                    time: time,
+                    repeats: .weekly([.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday])
+                ))
+                let configuration = AlarmManager.AlarmConfiguration<JumpStartMetadata>.alarm(
                     schedule: schedule,
                     attributes: attributes,
                     stopIntent: nil,

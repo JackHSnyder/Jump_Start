@@ -2,7 +2,7 @@ name: JumpStart
 options:
   bundleIdPrefix: com.nikogray
   deploymentTarget:
-    iOS: "26.0"
+    iOS: "26.1"
 settings:
   base:
     SWIFT_VERSION: 5.0

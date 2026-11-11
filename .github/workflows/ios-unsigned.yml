@@ -1,0 +1,31 @@
+name: Build unsigned iOS IPA
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  ios:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Compile unsigned iPhone app
+        run: |
+          set -o pipefail
+          xcodebuild -project JumpStart.xcodeproj -scheme JumpStart -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/DerivedData" CODE_SIGNING_ALLOWED=NO build
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p "$RUNNER_TEMP/package/Payload"
+          cp -R "$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/JumpStart.app" "$RUNNER_TEMP/package/Payload/"
+          cd "$RUNNER_TEMP/package"
+          zip -qr "$RUNNER_TEMP/JumpStart-unsigned.ipa" Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JumpStart-unsigned-ipa
+          path: ${{ runner.temp }}/JumpStart-unsigned.ipa
+          retention-days: 14

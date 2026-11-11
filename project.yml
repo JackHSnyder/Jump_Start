@@ -2,19 +2,22 @@ name: JumpStart
 options:
   bundleIdPrefix: com.nikogray
   deploymentTarget:
-    iOS: "26.0"
+    iOS: "26.1"
 settings:
   base:
     SWIFT_VERSION: 5.0
     TARGETED_DEVICE_FAMILY: "1"
-    GENERATE_INFOPLIST_FILE: YES
-    INFOPLIST_KEY_NSCameraUsageDescription: "JumpStart uses your camera locally to recognize jumping jacks. Video is never saved or uploaded."
-    INFOPLIST_KEY_NSAlarmKitUsageDescription: "JumpStart schedules wake-up alarms that you configure."
     SUPPORTS_MACCATALYST: NO
 targets:
   JumpStart:
     type: application
     platform: iOS
+    info:
+      path: JumpStart/Info.plist
+      properties:
+        CFBundleDisplayName: JumpStart
+        NSCameraUsageDescription: "JumpStart uses your camera locally to recognize jumping jacks. Video is never saved or uploaded."
+        NSAlarmKitUsageDescription: "JumpStart schedules wake-up alarms that you configure."
     sources:
       - path: JumpStart
     settings:

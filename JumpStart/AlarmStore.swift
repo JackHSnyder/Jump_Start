@@ -59,7 +59,12 @@ final class AlarmStore: ObservableObject {
         defer { isBusy = false }
         do {
             if enabled {
-                let state = try await AlarmManager.shared.requestAuthorization()
+                let state: AlarmManager.AuthorizationState
+                do {
+                    state = try await AlarmManager.shared.requestAuthorization()
+                } catch {
+                    throw AlarmSetupError.authorizationFailed(error.localizedDescription)
+                }
                 guard state == .authorized else {
                     throw AlarmError.notAuthorized
                 }
@@ -92,7 +97,11 @@ final class AlarmStore: ObservableObject {
                     secondaryIntent: OpenChallengeIntent(),
                     sound: .default
                 )
-                _ = try await AlarmManager.shared.schedule(id: settings.id, configuration: configuration)
+                do {
+                    _ = try await AlarmManager.shared.schedule(id: settings.id, configuration: configuration)
+                } catch {
+                    throw AlarmSetupError.schedulingFailed(error.localizedDescription)
+                }
             } else {
                 try AlarmManager.shared.cancel(id: settings.id)
             }
@@ -112,4 +121,18 @@ final class AlarmStore: ObservableObject {
 enum AlarmError: LocalizedError {
     case notAuthorized
     var errorDescription: String? { "Allow alarms in iOS Settings to schedule a wake-up alarm." }
+}
+
+enum AlarmSetupError: LocalizedError {
+    case authorizationFailed(String)
+    case schedulingFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .authorizationFailed(let detail):
+            return "Alarm permission request failed: \(detail)"
+        case .schedulingFailed(let detail):
+            return "Alarm scheduling failed after authorization: \(detail)"
+        }
+    }
 }
